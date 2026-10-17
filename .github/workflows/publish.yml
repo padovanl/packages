@@ -1,0 +1,76 @@
+name: Publish APT repository
+
+# Rebuilds apt.lucapadovan.dev from scratch out of the GitHub releases of
+# every project in REPOS: no .deb file is ever committed here. portop's
+# release workflow starts this one after each stable release.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # Projects whose releases go into the repository, space separated.
+  REPOS: padovanl/portop
+  # Latest stable releases kept for each project.
+  KEEP: "3"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - name: Install apt-ftparchive
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends apt-utils
+      # ARMv6 and ARMv7 builds are both armhf to APT; ARMv6 also runs on
+      # ARMv7 CPUs, so only that one is published.
+      - name: Download release packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          mkdir incoming
+          for repo in $REPOS; do
+            tags=$(gh release list --repo "$repo" --exclude-drafts --exclude-pre-releases \
+              --limit "$KEEP" --json tagName --jq '.[].tagName')
+            for tag in $tags; do
+              dir=$(mktemp -d)
+              gh release download "$tag" --repo "$repo" --dir "$dir" \
+                --pattern '*_linux_amd64.deb' --pattern '*_linux_arm64.deb' \
+                --pattern '*_linux_armv6.deb' --pattern checksums.txt
+              # Every package must be listed in the release checksums.
+              for f in "$dir"/*.deb; do
+                (cd "$dir" && grep " $(basename "$f")\$" checksums.txt | sha256sum --check --strict -)
+              done
+              mv "$dir"/*.deb incoming/
+            done
+          done
+      - name: Import signing key
+        env:
+          APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
+        run: printf '%s\n' "$APT_SIGNING_KEY" | gpg --batch --import
+      - run: scripts/build-repo.sh incoming public
+      - run: cp static/* public/
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
+        with:
+          path: public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
