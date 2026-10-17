@@ -5,9 +5,12 @@
 
 The package list comes from the repository's own Packages indexes, so a
 project added to REPOS shows up here without touching this file.
+static/descriptions.json can replace a package's description on the page,
+for releases that shipped a poor one.
 """
 
 import html
+import json
 import pathlib
 import string
 import sys
@@ -47,6 +50,12 @@ def main():
             )
             pkg["homepage"] = fields.get("Homepage", "")
 
+    here = pathlib.Path(__file__).parent.parent / "static"
+    overrides = json.loads((here / "descriptions.json").read_text())
+    for name, description in overrides.items():
+        if name in packages:
+            packages[name]["description"] = description
+
     items = []
     for name, pkg in sorted(packages.items()):
         latest = max(pkg["versions"], key=version_key)
@@ -62,9 +71,7 @@ def main():
       </li>"""
         )
 
-    template = string.Template(
-        (pathlib.Path(__file__).parent.parent / "static" / "index.html.in").read_text()
-    )
+    template = string.Template((here / "index.html.in").read_text())
     spaced = " ".join(fingerprint[i : i + 4] for i in range(0, len(fingerprint), 4))
     (repo / "index.html").write_text(
         template.substitute(packages="\n".join(items), fingerprint=html.escape(spaced))

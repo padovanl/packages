@@ -1,0 +1,3 @@
+{
+  "portop": "An htop-style terminal UI that shows which process, systemd unit and Docker container are using each TCP/UDP port, and lets you stop it."
+}
