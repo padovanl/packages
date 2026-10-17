@@ -63,6 +63,15 @@ gpg --batch --yes --local-user "$key" --clearsign \
 gpg --batch --yes --local-user "$key" --armor --detach-sign \
 	--output "dists/$suite/Release.gpg" "dists/$suite/Release"
 
+# Latest version of each package for shields.io endpoint badges
+# (https://img.shields.io/endpoint?url=https://apt.lucapadovan.dev/badges/portop.json).
+mkdir -p badges
+for dir in "pool/$component"/*/*/; do
+	pkg=$(basename "$dir")
+	ver=$(for deb in "$dir"*.deb; do dpkg-deb --field "$deb" Version; done | sort -uV | tail -n 1)
+	printf '{"schemaVersion":1,"label":"apt","message":"v%s","color":"blue"}\n' "$ver" >"badges/$pkg.json"
+done
+
 # Binary keyring for signed-by=, armored copy for people who want to read it.
 gpg --batch --export "$key" >lucapadovan.gpg
 gpg --batch --armor --export "$key" >lucapadovan.asc
