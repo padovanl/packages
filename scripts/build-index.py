@@ -59,15 +59,16 @@ def main():
     items = []
     for name, pkg in sorted(packages.items()):
         latest = max(pkg["versions"], key=version_key)
-        archs = ", ".join(sorted(pkg["archs"]))
+        archs = " · ".join(sorted(pkg["archs"]))
         title = html.escape(name)
         if pkg["homepage"]:
             title = f'<a href="{html.escape(pkg["homepage"])}">{title}</a>'
         items.append(
             f"""      <li>
-        <div class="pkg-head"><h3>{title}</h3><span class="version">{html.escape(latest)}</span></div>
+        <div class="pkg-top"><span class="badge">{html.escape(archs)}</span><span class="version">v{html.escape(latest)}</span></div>
+        <h3>{title}</h3>
         <p>{html.escape(pkg["description"])}</p>
-        <div class="pkg-foot"><code>sudo apt install {html.escape(name)}</code><span class="archs">{html.escape(archs)}</span></div>
+        <code class="install">sudo apt install {html.escape(name)}</code>
       </li>"""
         )
 

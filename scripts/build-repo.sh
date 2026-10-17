@@ -79,3 +79,4 @@ gpg --batch --armor --export "$key" >lucapadovan.asc
 
 fpr=$(gpg --batch --with-colons --fingerprint "$key" | awk -F: '$1 == "fpr" { print $10; exit }')
 python3 -I "$here/build-index.py" . "$fpr"
+cp "$here/../static/logo.svg" .
