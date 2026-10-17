@@ -7,6 +7,7 @@
 # it by fingerprint and defaults to the first secret key found.
 set -eu
 
+here=$(cd "$(dirname "$0")" && pwd)
 in=$1
 out=$2
 suite=stable
@@ -75,3 +76,6 @@ done
 # Binary keyring for signed-by=, armored copy for people who want to read it.
 gpg --batch --export "$key" >lucapadovan.gpg
 gpg --batch --armor --export "$key" >lucapadovan.asc
+
+fpr=$(gpg --batch --with-colons --fingerprint "$key" | awk -F: '$1 == "fpr" { print $10; exit }')
+python3 -I "$here/build-index.py" . "$fpr"

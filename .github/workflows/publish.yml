@@ -17,7 +17,7 @@ concurrency:
 
 env:
   # Projects whose releases go into the repository, space separated.
-  REPOS: padovanl/portop
+  REPOS: padovanl/portop padovanl/pkgtui
   # Latest stable releases kept for each project.
   KEEP: "3"
 
@@ -29,7 +29,7 @@ jobs:
       - name: Install apt-ftparchive
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends apt-utils
       # ARMv6 and ARMv7 builds are both armhf to APT; ARMv6 also runs on
-      # ARMv7 CPUs, so only that one is published.
+      # ARMv7 CPUs, so ARMv7 packages are dropped.
       - name: Download release packages
         env:
           GH_TOKEN: ${{ github.token }}
@@ -42,8 +42,8 @@ jobs:
             for tag in $tags; do
               dir=$(mktemp -d)
               gh release download "$tag" --repo "$repo" --dir "$dir" \
-                --pattern '*_linux_amd64.deb' --pattern '*_linux_arm64.deb' \
-                --pattern '*_linux_armv6.deb' --pattern checksums.txt
+                --pattern '*.deb' --pattern checksums.txt
+              rm -f "$dir"/*armv7*.deb
               # Every package must be listed in the release checksums.
               for f in "$dir"/*.deb; do
                 (cd "$dir" && grep " $(basename "$f")\$" checksums.txt | sha256sum --check --strict -)
@@ -56,7 +56,6 @@ jobs:
           APT_SIGNING_KEY: ${{ secrets.APT_SIGNING_KEY }}
         run: printf '%s\n' "$APT_SIGNING_KEY" | gpg --batch --import
       - run: scripts/build-repo.sh incoming public
-      - run: cp static/* public/
       - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
       - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         with:
