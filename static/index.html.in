@@ -84,6 +84,7 @@
   .pkg-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
   .badge { font: 11px var(--mono); letter-spacing: .3px; color: #d0d5e8; background: #ffffff09; border-radius: 999px; padding: 6px 10px; }
   .version { font: 13px var(--mono); color: #e2d9ff; }
+  .badge, .version, .eyebrow { cursor: default; -webkit-user-select: none; user-select: none; }
   .packages h3 { font-size: 32px; line-height: 1.2; letter-spacing: -1px; margin: 0 0 10px; font-weight: 650; }
   .packages p { color: var(--muted); margin: 0 0 22px; }
   .install { margin-top: auto; align-self: flex-start; border: 1px solid #c1b3ff35; border-radius: 10px; color: var(--accent); background: #c1b3ff08; padding: 8px 14px; font-size: 14px; }
