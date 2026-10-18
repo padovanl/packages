@@ -44,6 +44,9 @@ def main():
             pkg = packages.setdefault(fields["Package"], {"versions": set(), "archs": set()})
             pkg["versions"].add(fields["Version"])
             pkg["archs"].add(fields["Architecture"])
+            # The page shows the newest version's description and homepage.
+            if pkg["versions"] and version_key(fields["Version"]) < version_key(max(pkg["versions"], key=version_key)):
+                continue
             # A "." line separates paragraphs in a Debian description.
             pkg["description"] = " ".join(
                 l for l in fields.get("Description", "").splitlines() if l != "."
