@@ -42,11 +42,12 @@ jobs:
             for tag in $tags; do
               dir=$(mktemp -d)
               gh release download "$tag" --repo "$repo" --dir "$dir" \
-                --pattern '*.deb' --pattern checksums.txt
+                --pattern '*.deb' --pattern '*checksums.txt'
               rm -f "$dir"/*armv7*.deb
-              # Every package must be listed in the release checksums.
+              # Every package must be listed in one of the release's
+              # checksum files (checksums.txt, or e.g. portop-desktop's own).
               for f in "$dir"/*.deb; do
-                (cd "$dir" && grep " $(basename "$f")\$" checksums.txt | sha256sum --check --strict -)
+                (cd "$dir" && cat ./*checksums.txt | grep " $(basename "$f")\$" | sha256sum --check --strict -)
               done
               mv "$dir"/*.deb incoming/
             done
